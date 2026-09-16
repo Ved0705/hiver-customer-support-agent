@@ -1,0 +1,12 @@
+,conversations,pct
+delivery/order,44,22.3
+billing/refund,10,5.1
+account/login,8,4.1
+cancel/subscription,8,4.1
+complaint/escalation,5,2.5
+device/hardware,2,1.0
+software/update,2,1.0
+storage/sync,2,1.0
+playback/streaming,2,1.0
+flight/booking,2,1.0
+ride/driver,0,0.0

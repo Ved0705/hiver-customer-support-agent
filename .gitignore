@@ -1,0 +1,15 @@
+# Raw dataset
+data/raw/twcs.csv
+
+# Python
+__pycache__/
+*.py[cod]
+
+# IDE
+.idea/
+.vscode/
+
+# Environment
+.env
+venv/
+.venv/
