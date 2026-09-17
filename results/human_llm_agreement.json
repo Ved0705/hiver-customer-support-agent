@@ -1,0 +1,26 @@
+{
+  "helpfulness": {
+    "exact_agreement_rate": 0.5,
+    "mean_absolute_difference": 0.9,
+    "cohens_kappa": -0.0869565217391306
+  },
+  "grounded": {
+    "exact_agreement_rate": 0.7,
+    "mean_absolute_difference": 0.4,
+    "cohens_kappa": 0.0
+  },
+  "safe": {
+    "exact_agreement_rate": 1.0,
+    "mean_absolute_difference": 0.0,
+    "cohens_kappa": null
+  },
+  "acceptable": {
+    "exact_agreement_rate": 0.6,
+    "mean_absolute_difference": 0.6,
+    "cohens_kappa": -0.08108108108108092
+  },
+  "overall": {
+    "exact_agreement_rate": 0.7,
+    "mean_absolute_difference": 0.475
+  }
+}

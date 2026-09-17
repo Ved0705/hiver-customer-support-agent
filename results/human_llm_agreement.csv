@@ -1,0 +1,11 @@
+id,human_helpfulness,llm_helpfulness,helpfulness_abs_diff,helpfulness_exact_agree,human_grounded,llm_grounded,grounded_abs_diff,grounded_exact_agree,human_safe,llm_safe,safe_abs_diff,safe_exact_agree,human_acceptable,llm_acceptable,acceptable_abs_diff,acceptable_exact_agree
+AMZ-011,5,5,0,1,5,5,0,1,5,5,0,1,5,5,0,1
+AMZ-066,4,5,1,0,5,5,0,1,5,5,0,1,5,5,0,1
+AMZ-015,5,5,0,1,5,5,0,1,5,5,0,1,5,5,0,1
+AMZ-001,5,2,3,0,5,5,0,1,5,5,0,1,5,2,3,0
+AMZ-143,3,5,2,0,4,5,1,0,5,5,0,1,4,5,1,0
+AMZ-059,5,5,0,1,5,5,0,1,5,5,0,1,5,5,0,1
+AMZ-170,5,5,0,1,5,5,0,1,5,5,0,1,5,5,0,1
+AMZ-039,4,5,1,0,4,5,1,0,5,5,0,1,4,5,1,0
+AMZ-156,5,5,0,1,5,5,0,1,5,5,0,1,5,5,0,1
+AMZ-035,3,5,2,0,3,5,2,0,5,5,0,1,4,5,1,0
