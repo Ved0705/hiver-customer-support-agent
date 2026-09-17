@@ -1,0 +1,99 @@
+{
+  "description": "Agent evaluation on the exact 45-example test split used by the classical baseline",
+  "split_info": {
+    "test_size": 0.25,
+    "seed": 42,
+    "stratified": true,
+    "dropped_small_classes": []
+  },
+  "n_test_examples": 45,
+  "n_successful_classifications": 45,
+  "intent_accuracy": 0.6444,
+  "intent_macro_f1": 0.5687,
+  "per_class": {
+    "ACCOUNT_ACCESS_OR_SECURITY": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 2.0
+    },
+    "DELIVERY_EXPERIENCE_OR_CARRIER_COMPLAINT": {
+      "precision": 0.4,
+      "recall": 1.0,
+      "f1-score": 0.5714,
+      "support": 2.0
+    },
+    "DELIVERY_LATE_OR_NOT_ARRIVED": {
+      "precision": 0.5833,
+      "recall": 0.875,
+      "f1-score": 0.7,
+      "support": 8.0
+    },
+    "DELIVERY_NOT_RECEIVED_BUT_MARKED_DELIVERED": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 4.0
+    },
+    "DEVICE_OR_DIGITAL_SERVICE_ISSUE": {
+      "precision": 0.5,
+      "recall": 0.75,
+      "f1-score": 0.6,
+      "support": 4.0
+    },
+    "GENERAL_SERVICE_COMPLAINT": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 3.0
+    },
+    "ITEM_DAMAGED_WRONG_OR_COUNTERFEIT": {
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1-score": 0.5,
+      "support": 3.0
+    },
+    "OTHER_NON_ACTIONABLE": {
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1-score": 0.8571,
+      "support": 8.0
+    },
+    "PRIME_MEMBERSHIP_OR_SUBSCRIPTION": {
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1-score": 0.5,
+      "support": 3.0
+    },
+    "REFUND_STATUS_OR_AMOUNT": {
+      "precision": 0.4,
+      "recall": 1.0,
+      "f1-score": 0.5714,
+      "support": 2.0
+    },
+    "RETURN_OR_REPLACEMENT_REQUEST": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6667,
+      "support": 2.0
+    },
+    "UNEXPECTED_CHARGE_OR_BILLING_ERROR": {
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1-score": 0.8571,
+      "support": 4.0
+    },
+    "macro avg": {
+      "precision": 0.6153,
+      "recall": 0.6493,
+      "f1-score": 0.5687,
+      "support": 45.0
+    },
+    "weighted avg": {
+      "precision": 0.6504,
+      "recall": 0.6444,
+      "f1-score": 0.5979,
+      "support": 45.0
+    }
+  }
+}

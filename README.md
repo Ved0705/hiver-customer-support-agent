@@ -3,6 +3,18 @@
 ## 1. Problem
 The objective is to build an AI customer-support agent for a single brand (AmazonHelp) that classifies customer messages into a data-defined 12-intent set, drafts replies grounded in historical resolutions, and explicitly decides whether to `AUTO_HANDLE` or `ESCALATE` the query with a documented reason.
 
+**What "good" means for this agent:**
+- **Correct intent classification:** Accurately identifying the customer's core issue from the 12-intent taxonomy.
+- **Useful, grounded responses:** Drafting replies that directly address the issue using historical resolutions, without hallucinating policies.
+- **Safe handling of privileged actions:** Recognizing when a query requires account/order-specific access or actions.
+- **Appropriate escalation:** Escalating those privileged or high-risk cases rather than attempting to guess or hallucinate privileged information.
+
+**What was deliberately NOT built:**
+- No direct account or order system access.
+- No payment or refund execution capabilities.
+- No real order lookup or API integrations.
+- No production deployment or integration with live Amazon systems.
+
 ## 2. Dataset & Brand Selection
 The project utilizes the Customer Support on Twitter (TWCS) dataset:
 - **Raw dataset:** 2,811,774 rows (1,537,843 inbound, 1,273,931 outbound)
@@ -18,11 +30,16 @@ The project utilizes the Customer Support on Twitter (TWCS) dataset:
 
 **AmazonHelp** was selected due to its robust and large volume of usable conversations after data cleaning, making it highly suitable for building and evaluating a customer support agent.
 
-## 3. Data Processing
-Conversations were reconstructed. `created_at` was used for chronological ordering because `tweet_id` was found not to reliably represent chronological order. To maintain data integrity:
-- **Multi-customer merged threads were excluded:** One observed thread erroneously merged 448 turns and 116 distinct customers. Excluding these prevented severe contamination of intent labels and context (19 threads dropped).
-- **Short conversations were excluded:** Conversations with fewer than 3 turns lack sufficient context and were dropped (103 out of 300 initial candidates).
-- **Final Set:** A resulting usable set of 178 conversations remained.
+## 3. Data Processing & Golden-Set Methodology
+Conversations were reconstructed. `created_at` was used for chronological ordering because `tweet_id` was found not to reliably represent chronological order. 
+
+**Golden-Set Methodology:**
+- **300 initial candidate conversations** from the AmazonHelp pool were used for manual review; the repository does not retain a formal random-sampling protocol for this candidate pool.
+- **19 multi-customer merged threads were excluded:** One observed thread erroneously merged 448 turns and 116 distinct customers. Excluding these prevented severe contamination of intent labels and context.
+- **103 short conversations were excluded:** Conversations with fewer than 3 turns lack sufficient context and were dropped.
+- **Final Set:** This filtering produced the final 178-example human-reviewed golden set.
+
+These 178 examples were manually reviewed by a human and represent the project's human-reviewed evaluation ground truth.
 
 ## 4. Intent Taxonomy
 The taxonomy was data-defined directly from the observed AmazonHelp conversations, resulting in a manageable set of 12 intents:
@@ -57,17 +74,26 @@ AUTO_HANDLE draft OR ESCALATE with reason
 ```
 The escalation layer defines a boundary for cases requiring privileged access (e.g., account/order-specific details or money movement), which the automated agent cannot directly perform.
 
-## 6. Baselines
+## 6. Baselines & Like-for-Like Comparison
+To benchmark the necessity of the LLM approach, we compare the Gemini agent against a classical machine learning baseline on an identical, exact test split.
+
+**Exact 45-Example Test Split Details:**
+- `test_size` = 0.25
+- `random_state` = 42
+- `stratified` = True
+- 45 test examples
+*(This is the exact test split used by the classical baseline).*
+
 | Model | Intent Accuracy | Intent Macro F1 |
 | :--- | :--- | :--- |
 | **Trivial Baseline (Majority Class)** | 17.78% | 2.52% |
 | **Simple Baseline (TF-IDF + LogReg)** | 35.56% | 30.43% |
-| **Agent (Gemini 3.1 Flash-Lite)** | 60.11% | 59.24% |
+| **Agent (gemini-2.5-flash)** | **64.44%** | **56.87%** |
 
-*(Note: Simple baseline uses word TF-IDF 1–2 grams and character TF-IDF 3–5 grams. Baselines were evaluated on a 133 train / 45 test split).*
+*(Note: Simple baseline uses word TF-IDF 1–2 grams and character TF-IDF 3–5 grams).*
 
-## 7. Agent Evaluation
-The full agent was evaluated against all 178 human-reviewed golden examples across the 12 intent classes.
+## 7. Full Agent Evaluation (178 Examples)
+While the 45-example test split provides a direct comparison to classical baselines, the full agent was also evaluated against **all 178** human-reviewed golden examples to provide broader coverage across the evaluation set. A [Confusion Matrix](results/confusion_matrix.md) artifact has been generated for these 178 examples.
 
 **Intent Classification:**
 - **Accuracy:** 60.11%
@@ -89,7 +115,7 @@ Per-class F1 variation highlights areas of strength and weakness:
 Reply quality was evaluated separately from intent classification using 30 `AUTO_HANDLE` replies. All 30 successfully produced non-empty drafts.
 
 **LLM Judge Scores (out of 5):**
-*(Scored by gemini-3.1-flash-lite, these are LLM-judge scores, NOT human ratings)*
+*(Scored by gemini-2.5-flash, these are LLM-judge scores, NOT human ratings)*
 - Helpfulness: 4.37
 - Groundedness: 4.97
 - Safety: 5.00
@@ -107,20 +133,32 @@ To validate the judge, a 10-example human audit was conducted:
 Analysis of the 71 incorrect intent predictions reveals several systematic confusion patterns, including overlapping taxonomy boundaries and possible annotation ambiguity in some cases:
 
 1. **`OTHER_NON_ACTIONABLE` → `DELIVERY_LATE_OR_NOT_ARRIVED` (8 errors)**
-   *Hypothesis:* Vague complaints (e.g., "Not here") are forcefully mapped to actionable delivery categories by the model, suggesting inconsistency in how vague complaints should be treated.
+   *Example:* "Not here pissed @115821"
+   *Hypothesis:* Vague complaints are forcefully mapped to actionable delivery categories by the model, suggesting inconsistency in how vague complaints should be treated.
 2. **`DELIVERY_NOT_RECEIVED_BUT_MARKED_DELIVERED` → `DELIVERY_LATE_OR_NOT_ARRIVED` (7 errors)**
-   *Hypothesis:* The boundary between delivery delays and "marked delivered" errors is highly overlapping. In many cases, text alone does not state tracking status, pointing to possible taxonomy or annotation ambiguity.
+   *Example:* "Hey @115821, why is your Prime 2-day delivery not arriving until Monday? Is there a holiday I don't know about?"
+   *Hypothesis:* The boundary between delivery delays and "marked delivered" errors is highly overlapping. This example demonstrates the ambiguity because the message itself does not expose the tracking state, pointing to possible taxonomy or annotation ambiguity.
 3. **`PRIME_MEMBERSHIP_OR_SUBSCRIPTION` → `DELIVERY_LATE_OR_NOT_ARRIVED` (4 errors)**
-   *Hypothesis:* When customers mention "Prime member" alongside operational failures (e.g., late orders), the model prioritizes the delivery failure, whereas human annotations may favor the "Prime" keyword.
+   *Example:* "@115821 u just lost a prime member of many years. Not only did u mess up 3 consec orders..."
+   *Hypothesis:* When customers mention "Prime member" alongside operational failures, the model prioritizes the delivery failure, whereas human annotations may favor the "Prime" keyword.
 4. **`OTHER_NON_ACTIONABLE` → `DEVICE_OR_DIGITAL_SERVICE_ISSUE` (3 errors)**
-   *Hypothesis:* Vague technical queries (e.g., "videos breaking") are mapped to digital service issues by the model, while human labelers categorized them as non-actionable due to a lack of detail.
+   *Example:* "@116618 why your videos on Germany breaks too?"
+   *Hypothesis:* Vague technical queries are mapped to digital service issues by the model, while human labelers categorized them as non-actionable due to a lack of detail.
 5. **`ITEM_DAMAGED_WRONG_OR_COUNTERFEIT` → `RETURN_OR_REPLACEMENT_REQUEST` (2 errors)**
-   *Hypothesis:* When a damaged item is reported with an explicit request for a replacement, the model prioritizes the desired action, whereas annotations prioritize the root cause, revealing a lack of strict hierarchical rules.
+   *Example:* "Ordered to games and both came rattling inside their cases. One is broken... @115821"
+   *Hypothesis:* When a damaged item is reported with an explicit/implicit replacement context, the model prioritizes the desired action, whereas annotations prioritize the root cause.
+
+*(Note: These examples illustrate the observed confusion patterns and do not prove that the human label is wrong).*
 
 ## 10. What Is Misleading About My Headline Number?
-**Headline number: 60.11% intent accuracy.**
+**Two agent evaluation views are reported: 60.11% accuracy on the full 178-example set and 64.44% accuracy on the 45-example baseline test split.**
 
-This figure is an intent-classification performance metric on a 178-example evaluation set, NOT a claim that "the agent is 60% good." Its limitations include:
+These figures are intent-classification performance metrics, NOT a claim that "the agent is 60% good." 
+The methodological distinction is:
+- **60.11% accuracy / 59.24% macro F1** = Full 178-example agent evaluation for broader coverage across the human-reviewed set.
+- **64.44% accuracy / 56.87% macro F1** = Agent evaluation on the exact 45-example baseline test split. This is the appropriate like-for-like comparison with the classical baseline (which achieved 35.56% / 30.43%).
+
+Limitations include:
 - **Small evaluation set:** 178 examples cannot guarantee universal real-world performance.
 - **Class imbalance & variation:** Because the class sizes are unequal, aggregate accuracy weights classes differently; per-class F1 shows variation across intents (e.g., `PRIME_MEMBERSHIP_OR_SUBSCRIPTION` F1 = 0.400).
 - **Taxonomy ambiguity:** Overlapping delivery categories and compound complaints suppress accuracy scores without strictly being "failures."
@@ -128,7 +166,16 @@ This figure is an intent-classification performance metric on a 178-example eval
 - **Separate reply quality:** The reply-quality evaluation measures a separate capability from intent classification.
 - **Human/LLM agreement limitation:** The 10-example human audit of the LLM judge provides limited evidence and cannot universally validate the LLM judge's reliability.
 
-## 11. Decision Log
+## 11. What I'd Do With One More Week
+If given an additional week, I would prioritize the following specific improvements:
+- **Expand and rebalance the golden set:** Collect more examples to increase the evaluation set size, specifically targeting underrepresented intents.
+- **Improve taxonomy boundaries:** Refine the definitions and guidelines for overlapping categories (like late deliveries vs. marked delivered) using observed confusion cases to reduce annotation ambiguity.
+- **Stronger semantic retrieval:** Replace or augment the current TF-IDF retrieval with a dense embedding-based semantic search, and compare the grounding performance experimentally.
+- **Expand human reply-quality evaluation:** Increase the human audit from 10 examples to a larger subset to establish a more statistically sound agreement metric with the LLM judge.
+- **Add robust automated testing:** Implement unit and regression tests for the classification and escalation boundaries to ensure stability.
+- **Build a small production-style service boundary:** Wrap the agent in an API to simulate structured escalation routing and add basic observability logs for the intent and confidence scores.
+
+## 12. Decision Log
 | Decision | Rationale |
 | :--- | :--- |
 | **AmazonHelp selection** | High volume of usable conversations after cleaning. |
@@ -147,7 +194,7 @@ This figure is an intent-classification performance metric on a 178-example eval
 | **Separate reply evaluation** | Intent classification doesn't measure grounded response quality. |
 | **LLM judge + human audit** | Structured LLM evaluation with an independent human alignment check. |
 
-## 12. Limitations & Reproducibility
+## 13. Limitations & Reproducibility
 **Limitations:**
 - The 178-example golden evaluation set is small.
 - Intent performance varies significantly across classes.
@@ -162,7 +209,7 @@ Ensure Python is installed, then set up your environment:
 pip install -r requirements.txt
 
 # Configure your Gemini API key
-copy .env.example .env
+copy env.example .env
 ```
 Edit `.env` and set `GEMINI_API_KEY` locally. Never commit `.env`.
 
@@ -180,4 +227,11 @@ python src/judge_replies.py
 # Calculate human-LLM agreement on the 10-example audit set
 python src/calculate_agreement.py
 ```
-*(Note: Raw TWCS data and `.gemini_cache.json` files are excluded from the repository to protect API quotas and comply with file size limits.)*
+*(Note: Full clean-clone reproduction from raw tweets is not provided out of the box because the raw TWCS data and `.gemini_cache.json` files are excluded from the repository. However, the repository contains the evaluation artifacts, golden set, result files, and evaluation scripts needed to reproduce the reported offline evaluations, subject to local Gemini API configuration).*
+
+**Golden Set File Distinction:**
+- `data/golden/golden_set.csv` is used by the full agent evaluation.
+- `data/golden/golden_set_review.csv` is used by the classical baseline evaluation and its 45-example test split.
+
+## 14. Dataset / Attribution
+This project uses the **Customer Support on Twitter (TWCS)** dataset. The raw dataset contains inbound and outbound customer support tweets and was used as the foundational corpus to reconstruct conversations, profile brands, and extract the AmazonHelp subset.
