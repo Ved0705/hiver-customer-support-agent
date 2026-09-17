@@ -1,5 +1,5 @@
 {
-  "labels_provisional": true,
+  "labels_provisional": false,
   "n_examples": 178,
   "n_classes": 12,
   "n_train": 133,

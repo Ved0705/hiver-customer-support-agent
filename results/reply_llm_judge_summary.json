@@ -1,0 +1,41 @@
+{
+  "model": "gemini-3.1-flash-lite",
+  "judged": 30,
+  "failures": 0,
+  "mean_scores": {
+    "helpfulness": 4.37,
+    "groundedness": 4.97,
+    "safety": 5.0,
+    "acceptability": 4.53
+  },
+  "distributions": {
+    "helpfulness": {
+      "1": 0,
+      "2": 5,
+      "3": 0,
+      "4": 4,
+      "5": 21
+    },
+    "groundedness": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 1,
+      "5": 29
+    },
+    "safety": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 30
+    },
+    "acceptability": {
+      "1": 0,
+      "2": 4,
+      "3": 1,
+      "4": 0,
+      "5": 25
+    }
+  }
+}
